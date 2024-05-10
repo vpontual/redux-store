@@ -1,57 +1,39 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import ProductItem from "../ProductItem";
-import { useStoreContext } from "../../utils/GlobalState";
-import { UPDATE_PRODUCTS } from "../../utils/actions";
-import { useQuery } from "@apollo/client";
-import { QUERY_PRODUCTS } from "../../utils/queries";
-import { idbPromise } from "../../utils/helpers";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProducts } from "../store/actions/productActions";
 import spinner from "../../assets/spinner.gif";
 
-function ProductList() {
-  // Getting the Redux dispatch function
+const ProductList = () => {
   const dispatch = useDispatch();
-  // Selecting data from the Redux store
-  const { products, currentCategory } = useSelector((state) => state);
-
-  const { loading, data } = useQuery(QUERY_PRODUCTS);
+  const products = useSelector((state) => state.products.items);
+  const currentCategory = useSelector(
+    (state) => state.categories.currentCategory
+  );
+  const loading = useSelector((state) => state.products.loading);
 
   useEffect(() => {
-    if (data) {
-      dispatch(updateProducts(data.products)); // Dispatch an action to the Redux store
-      data.products.forEach((product) => {
-        idbPromise("products", "put", product);
-      });
-    } else if (!loading) {
-      idbPromise("products", "get").then((products) => {
-        dispatch(updateProducts(products));
-      });
-    }
-  }, [data, loading, dispatch]);
+    dispatch(fetchProducts());
+  }, [dispatch]);
 
-  function filterProducts() {
+  const filterProducts = () => {
     if (!currentCategory) {
-      return state.products;
+      return products;
     }
-
-    return state.products.filter(
+    return products.filter(
       (product) => product.category._id === currentCategory
     );
-  }
+  };
+
+  const filteredProducts = filterProducts();
 
   return (
     <div className="my-2">
       <h2>Our Products:</h2>
       {products.length ? (
         <div className="flex-row">
-          {filterProducts().map((product) => (
-            <ProductItem
-              key={product._id}
-              _id={product._id}
-              image={product.image}
-              name={product.name}
-              price={product.price}
-              quantity={product.quantity}
-            />
+          {filteredProducts.map((product) => (
+            <ProductItem key={product._id} item={product} />
           ))}
         </div>
       ) : (
@@ -60,6 +42,6 @@ function ProductList() {
       {loading ? <img src={spinner} alt="loading" /> : null}
     </div>
   );
-}
+};
 
 export default ProductList;

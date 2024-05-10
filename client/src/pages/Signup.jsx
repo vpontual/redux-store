@@ -1,39 +1,38 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useMutation } from '@apollo/client';
-import Auth from '../utils/auth';
-import { ADD_USER } from '../utils/mutations';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { signup } from "../store/actions/authActions";
 
-function Signup(props) {
-  const [formState, setFormState] = useState({ email: '', password: '' });
-  const [addUser] = useMutation(ADD_USER);
+function Signup() {
+  const dispatch = useDispatch();
+  const error = useSelector((state) => state.auth.error);
+  const [formState, setFormState] = useState({
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+  });
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
-    const mutationResponse = await addUser({
-      variables: {
-        email: formState.email,
-        password: formState.password,
-        firstName: formState.firstName,
-        lastName: formState.lastName,
-      },
-    });
-    const token = mutationResponse.data.addUser.token;
-    Auth.login(token);
+    dispatch(
+      signup(
+        formState.email,
+        formState.password,
+        formState.firstName,
+        formState.lastName
+      )
+    );
   };
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setFormState({
-      ...formState,
-      [name]: value,
-    });
+    setFormState({ ...formState, [name]: value });
   };
 
   return (
     <div className="container my-1">
       <Link to="/login">← Go to Login</Link>
-
       <h2>Signup</h2>
       <form onSubmit={handleFormSubmit}>
         <div className="flex-row space-between my-2">
@@ -76,6 +75,11 @@ function Signup(props) {
             onChange={handleChange}
           />
         </div>
+        {error ? (
+          <div>
+            <p className="error-text">An error occurred during signup</p>
+          </div>
+        ) : null}
         <div className="flex-row flex-end">
           <button type="submit">Submit</button>
         </div>

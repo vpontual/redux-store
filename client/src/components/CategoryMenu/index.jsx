@@ -1,68 +1,47 @@
-import React, { useEffect } from 'react';
-import { useQuery } from '@apollo/client';
-import { useStoreContext } from '../../utils/GlobalState';
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
-  UPDATE_CATEGORIES,
-  UPDATE_CURRENT_CATEGORY,
-} from '../../utils/actions';
-import { QUERY_CATEGORIES } from '../../utils/queries';
-import { idbPromise } from '../../utils/helpers';
+  fetchCategories,
+  setCurrentCategory,
+} from "../store/actions/categoryActions";
 
-function CategoryMenu() {
-  const [state, dispatch] = useStoreContext();
-
-  const { categories } = state;
-
-  const { loading, data: categoryData } = useQuery(QUERY_CATEGORIES);
+const CategoryMenu = () => {
+  const dispatch = useDispatch();
+  const categories = useSelector((state) => state.categories.items);
+  const currentCategory = useSelector(
+    (state) => state.categories.currentCategory
+  );
 
   useEffect(() => {
-    if (categoryData) {
-      dispatch({
-        type: UPDATE_CATEGORIES,
-        categories: categoryData.categories,
-      });
-      categoryData.categories.forEach((category) => {
-        idbPromise('categories', 'put', category);
-      });
-    } else if (!loading) {
-      idbPromise('categories', 'get').then((categories) => {
-        dispatch({
-          type: UPDATE_CATEGORIES,
-          categories: categories,
-        });
-      });
-    }
-  }, [categoryData, loading, dispatch]);
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
-  const handleClick = (id) => {
-    dispatch({
-      type: UPDATE_CURRENT_CATEGORY,
-      currentCategory: id,
-    });
+  const handleCategoryClick = (id) => {
+    dispatch(setCurrentCategory(id));
   };
 
   return (
     <div>
       <h2>Choose a Category:</h2>
-      {categories.map((item) => (
+      {categories.map((category) => (
         <button
-          key={item._id}
-          onClick={() => {
-            handleClick(item._id);
+          key={category._id}
+          onClick={() => handleCategoryClick(category._id)}
+          style={{
+            fontWeight: currentCategory === category._id ? "bold" : "normal",
           }}
         >
-          {item.name}
+          {category.name}
         </button>
       ))}
       <button
-        onClick={() => {
-          handleClick('');
-        }}
+        onClick={() => handleCategoryClick("")}
+        style={{ fontWeight: currentCategory === "" ? "bold" : "normal" }}
       >
         All
       </button>
     </div>
   );
-}
+};
 
 export default CategoryMenu;

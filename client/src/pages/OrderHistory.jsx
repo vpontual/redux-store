@@ -1,21 +1,13 @@
-import { Link } from 'react-router-dom';
-
-import { useQuery } from '@apollo/client';
-import { QUERY_USER } from '../utils/queries';
+import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 function OrderHistory() {
-  const { data } = useQuery(QUERY_USER);
-  let user;
-
-  if (data) {
-    user = data.user;
-  }
+  const user = useSelector((state) => state.auth.user);
 
   return (
     <>
       <div className="container my-1">
         <Link to="/">← Back to Products</Link>
-
         {user ? (
           <>
             <h2>

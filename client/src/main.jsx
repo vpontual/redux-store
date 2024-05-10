@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Provider } from "react-redux";
-import store from "./store"; // Import your Redux store
+import store from "./store/store"; // Import your Redux store
 
 import App from "./App.jsx";
 import Home from "./pages/Home";
@@ -18,7 +18,7 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
-    error: <NoMatch />,
+    errorElement: <NoMatch />,
     children: [
       { index: true, element: <Home /> },
       { path: "/login", element: <Login /> },

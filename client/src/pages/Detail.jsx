@@ -1,111 +1,56 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { useQuery } from '@apollo/client';
-
-import Cart from '../components/Cart';
-import { useStoreContext } from '../utils/GlobalState';
+import { useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import Cart from "../components/Cart";
 import {
-  REMOVE_FROM_CART,
-  UPDATE_CART_QUANTITY,
-  ADD_TO_CART,
-  UPDATE_PRODUCTS,
-} from '../utils/actions';
-import { QUERY_PRODUCTS } from '../utils/queries';
-import { idbPromise } from '../utils/helpers';
-import spinner from '../assets/spinner.gif';
+  fetchProduct,
+  addToCart,
+  removeFromCart,
+} from "../store/actions/productActions";
+import spinner from "../assets/spinner.gif";
 
 function Detail() {
-  const [state, dispatch] = useStoreContext();
+  const dispatch = useDispatch();
   const { id } = useParams();
-
-  const [currentProduct, setCurrentProduct] = useState({});
-
-  const { loading, data } = useQuery(QUERY_PRODUCTS);
-
-  const { products, cart } = state;
+  const product = useSelector((state) => state.products.currentProduct);
+  const cart = useSelector((state) => state.cart.items);
+  const loading = useSelector((state) => state.products.loading);
 
   useEffect(() => {
-    // already in global store
-    if (products.length) {
-      setCurrentProduct(products.find((product) => product._id === id));
-    }
-    // retrieved from server
-    else if (data) {
-      dispatch({
-        type: UPDATE_PRODUCTS,
-        products: data.products,
-      });
+    dispatch(fetchProduct(id));
+  }, [dispatch, id]);
 
-      data.products.forEach((product) => {
-        idbPromise('products', 'put', product);
-      });
-    }
-    // get cache from idb
-    else if (!loading) {
-      idbPromise('products', 'get').then((indexedProducts) => {
-        dispatch({
-          type: UPDATE_PRODUCTS,
-          products: indexedProducts,
-        });
-      });
-    }
-  }, [products, data, loading, dispatch, id]);
-
-  const addToCart = () => {
+  const addToCartHandler = () => {
     const itemInCart = cart.find((cartItem) => cartItem._id === id);
     if (itemInCart) {
-      dispatch({
-        type: UPDATE_CART_QUANTITY,
-        _id: id,
-        purchaseQuantity: parseInt(itemInCart.purchaseQuantity) + 1,
-      });
-      idbPromise('cart', 'put', {
-        ...itemInCart,
-        purchaseQuantity: parseInt(itemInCart.purchaseQuantity) + 1,
-      });
+      dispatch(addToCart(id, itemInCart.purchaseQuantity + 1));
     } else {
-      dispatch({
-        type: ADD_TO_CART,
-        product: { ...currentProduct, purchaseQuantity: 1 },
-      });
-      idbPromise('cart', 'put', { ...currentProduct, purchaseQuantity: 1 });
+      dispatch(addToCart(id, 1));
     }
   };
 
-  const removeFromCart = () => {
-    dispatch({
-      type: REMOVE_FROM_CART,
-      _id: currentProduct._id,
-    });
-
-    idbPromise('cart', 'delete', { ...currentProduct });
+  const removeFromCartHandler = () => {
+    dispatch(removeFromCart(id));
   };
 
   return (
     <>
-      {currentProduct && cart ? (
+      {product && cart ? (
         <div className="container my-1">
           <Link to="/">← Back to Products</Link>
-
-          <h2>{currentProduct.name}</h2>
-
-          <p>{currentProduct.description}</p>
-
+          <h2>{product.name}</h2>
+          <p>{product.description}</p>
           <p>
-            <strong>Price:</strong>${currentProduct.price}{' '}
-            <button onClick={addToCart}>Add to Cart</button>
+            <strong>Price:</strong>${product.price}{" "}
+            <button onClick={addToCartHandler}>Add to Cart</button>
             <button
-              disabled={!cart.find((p) => p._id === currentProduct._id)}
-              onClick={removeFromCart}
+              disabled={!cart.find((p) => p._id === product._id)}
+              onClick={removeFromCartHandler}
             >
               Remove from Cart
             </button>
           </p>
-
-          <img
-            src={`/images/${currentProduct.image}`}
-            alt={currentProduct.name}
-          />
+          <img src={`/images/${product.image}`} alt={product.name} />
         </div>
       ) : null}
       {loading ? <img src={spinner} alt="loading" /> : null}
